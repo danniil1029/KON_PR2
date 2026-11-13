@@ -1,0 +1,12 @@
+digraph DEPENDENCIES {
+  rankdir=LR;
+  graph [bgcolor="white", pad=0.25, ranksep=0.45];
+  node [shape=box, style="rounded,filled", fontname="Arial",
+        fontsize=11, fillcolor="#edf4ff", color="#91a6bf"];
+  edge [color="#64748b"];
+  "A" [tooltip="microsoft.extensions.options@8.0.0", fillcolor="#c8e0ff"];
+  "B" [tooltip="microsoft.extensions.dependencyinjection.abstractions@8.0.0"];
+  "C" [tooltip="microsoft.extensions.primitives@8.0.0"];
+  "A" -> "B";
+  "A" -> "C";
+}
