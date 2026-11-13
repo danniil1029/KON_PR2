@@ -1,23 +1,18 @@
-"""Четвёртый этап. Поиск обратных зависимостей."""
+"""Пятый этап. Анализ и визуализация зависимостей NuGet."""
 
 import argparse
 import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from src.graph import (
-    TEST_ID,
-    build_graph,
-    excluded_name,
-    read_test_graph,
-    reverse_edges,
-)
+from src.graph import TEST_ID, build_graph, excluded_name, read_test_graph
 from src.nuget import (
     DEFAULT_FRAMEWORK,
     PACKAGE_ID,
     NugetRepository,
     Package,
 )
+from src.render import ascii_tree, label_legend, node_labels, save_graph
 from src.versions import version_key
 
 DEFAULT_SOURCE = "https://api.nuget.org/v3/index.json"
@@ -59,7 +54,7 @@ def argument_parser():
     parser.add_argument("--repo", help="URL NuGet V3 или путь к JSON-файлу")
     parser.add_argument("--test", action="store_true", help="Локальный режим")
     parser.add_argument(
-        "--output", type=Path, default=Path("graph.svg"), help="Путь к SVG"
+        "--output", type=Path, default=Path("A.svg"), help="Путь к SVG"
     )
     parser.add_argument("--tree", action="store_true", help="ASCII-дерево")
     parser.add_argument(
@@ -70,10 +65,17 @@ def argument_parser():
     parser.add_argument(
         "--framework", default=DEFAULT_FRAMEWORK, help="Целевая платформа .NET"
     )
-    parser.add_argument(
-        "--reverse", action="store_true", help="Обратный обход для --test"
-    )
     return parser
+
+
+def validate_test_output(parser, args):
+    """Проверить настройки локального режима и защитить исходный файл."""
+    if args.version is not None:
+        parser.error("--version: используется только с NuGet")
+    source_path = Path(args.repo).resolve()
+    for output in (args.output, args.output.with_suffix(".dot")):
+        if output.resolve() == source_path:
+            parser.error("--output: путь совпадает с тестовым файлом")
 
 
 def validate_repository(parser, args):
@@ -84,11 +86,8 @@ def validate_repository(parser, args):
     if args.test:
         if not args.repo or not Path(args.repo).is_file():
             parser.error("--repo: нужен существующий тестовый файл")
-        if args.version is not None:
-            parser.error("--version: используется только с NuGet")
+        validate_test_output(parser, args)
         return
-    if args.reverse:
-        parser.error("--reverse: требуется тестовый репозиторий (--test)")
     if args.repo is None:
         args.repo = DEFAULT_SOURCE
     if not valid_source(args.repo):
@@ -101,6 +100,8 @@ def validate_output(parser, output):
         parser.error("--output: укажите путь к файлу с расширением .svg")
     if not output.parent.is_dir():
         parser.error("--output: папка для SVG должна существовать")
+    if output.with_suffix(".dot").is_dir():
+        parser.error("--output: рядом с SVG нужен путь для файла .dot")
 
 
 def validate_nuget_options(parser, args):
@@ -118,8 +119,8 @@ def parse_args(argv=None):
     """Прочитать опции и проверить значения."""
     parser = argument_parser()
     args = parser.parse_args(argv)
-    validate_repository(parser, args)
     validate_output(parser, args.output)
+    validate_repository(parser, args)
     if args.exclude is not None and not args.exclude.strip():
         parser.error("--exclude: подстрока должна быть непустой")
     validate_nuget_options(parser, args)
@@ -133,8 +134,6 @@ def analyze(args):
         root = Package(args.package)
         if root not in source:
             raise ValueError(f"В тестовом файле нет пакета {root}")
-        if args.reverse:
-            source = reverse_edges(source)
         dependencies = source.__getitem__
     else:
         source = NugetRepository(args.repo, args.framework)
@@ -149,26 +148,22 @@ def analyze(args):
     return root, build_graph(root, dependencies, args.depth, args.exclude)
 
 
-def print_graph(graph):
-    """Показать список смежности в порядке обхода BFS."""
-    for package, dependencies in graph.items():
-        children = ", ".join(map(str, dependencies)) or "(нет)"
-        print(f"{package} -> {children}")
-
-
 def main(argv=None):
-    """Показать обычные связи или список обратных зависимостей."""
+    """Сохранить DOT и SVG и при необходимости вывести дерево."""
     args = parse_args(argv)
     try:
         root, graph = analyze(args)
+        labels = node_labels(graph)
+        save_graph(graph, args.output, labels)
     except (ValueError, OSError) as error:
         print(f"Ошибка: {error}", file=sys.stderr)
         return 1
-    if args.reverse:
-        print(f"Обратные зависимости {root}:")
-        print(", ".join(str(node) for node in graph if node != root) or "(нет)")
-    else:
-        print_graph(graph)
+    if args.tree:
+        print(ascii_tree(root, graph, labels))
+        for item in label_legend(labels):
+            print(item)
+    print(f"SVG: {args.output}")
+    print(f"DOT: {args.output.with_suffix('.dot')}")
     return 0
 
 

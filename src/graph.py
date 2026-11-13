@@ -55,11 +55,3 @@ def build_graph(root, dependencies, max_depth=None, exclude=None):
                 graph[child] = []
                 queue.append((child, depth + 1))
     return graph
-
-def reverse_edges(graph):
-    """Построить список смежности с обратным направлением рёбер."""
-    reversed_graph = {package: [] for package in graph}
-    for parent, children in graph.items():
-        for child in dict.fromkeys(children):
-            reversed_graph[child].append(parent)
-    return reversed_graph

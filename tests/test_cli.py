@@ -16,7 +16,7 @@ class CliTests(unittest.TestCase):
         """Прочитать настройки обычного запуска."""
         args = parse_args(["--package", "Example.Package"])
         self.assertEqual(args.repo, DEFAULT_SOURCE)
-        self.assertEqual(args.output.name, "graph.svg")
+        self.assertEqual(args.output.name, "A.svg")
         self.assertFalse(args.tree)
         self.assertFalse(args.test)
 
@@ -36,7 +36,7 @@ class CliTests(unittest.TestCase):
             (["--exclude="], "--exclude"),
             (["--version", "invalid"], "--version"),
             (["--framework="], "--framework"),
-            (["--reverse"], "--reverse"),
+            (["--reverse"], "unrecognized arguments"),
         ]
         for options, expected in cases:
             with self.subTest(options=options):

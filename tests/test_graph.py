@@ -3,7 +3,7 @@
 import unittest
 from pathlib import Path
 
-from src.graph import build_graph, read_test_graph, reverse_edges
+from src.graph import build_graph, read_test_graph
 from src.nuget import Package
 
 FIXTURE = Path(__file__).parent / "fixtures" / "graph.json"
@@ -50,19 +50,4 @@ class GraphTests(unittest.TestCase):
         """Вернуть граф из одного узла для пакета без зависимостей."""
         package = Package("F")
         self.assertEqual(build_graph(package, self.source.__getitem__),
-                         {package: []})
-
-    def test_reverse_cycle(self):
-        """Найти прямых и транзитивных потребителей через обратные рёбра."""
-        graph = reverse_edges(self.source)
-        root = Package("D")
-        result = build_graph(root, graph.__getitem__)
-        self.assertEqual([node.name for node in result], ["D", "B", "C", "A"])
-        self.assertEqual(result[Package("A")], [root])
-
-    def test_reverse_isolated(self):
-        """Оставить изолированный узел при обратном обходе."""
-        graph = reverse_edges(self.source)
-        package = Package("F")
-        self.assertEqual(build_graph(package, graph.__getitem__),
                          {package: []})
