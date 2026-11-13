@@ -1,0 +1,25 @@
+1 этап
+cd ..\demo-stage-1
+python -m src.main --package A --output A.svg --tree --depth 2 --exclude B
+
+2 этап
+cd ..\demo-stage-2
+python -m src.main --package Microsoft.Extensions.Logging --version 8.0.0 --framework net8.0
+
+3 этап
+cd ..\demo-stage-3
+python -m src.main --test --repo tests/fixtures/graph.json --package A
+python -m src.main --test --repo tests/fixtures/graph.json --package A --depth 1
+python -m src.main --test --repo tests/fixtures/graph.json --package A --exclude ext
+python -m src.main --test --repo tests/fixtures/graph.json --package F
+
+4 этап
+cd ..\demo-stage-4
+python -m src.main --test --repo tests/fixtures/graph.json --package D --reverse
+python -m src.main --test --repo tests/fixtures/graph.json --package F --reverse
+
+
+5 этап
+cd ..\demo-stage-5
+python -m src.main --test --repo tests/fixtures/graph.json --package A --tree --output LOCAL-A.svg
+Invoke-Item .\LOCAL-A.svg

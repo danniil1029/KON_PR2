@@ -1,0 +1,16 @@
+digraph DEPENDENCIES {
+  rankdir=LR;
+  graph [bgcolor="white", pad=0.25, ranksep=0.45];
+  node [shape=box, style="rounded,filled", fontname="Arial",
+        fontsize=11, fillcolor="#edf4ff", color="#91a6bf"];
+  edge [color="#64748b"];
+  "A" [tooltip="A", fillcolor="#c8e0ff"];
+  "B" [tooltip="B"];
+  "C" [tooltip="C"];
+  "D" [tooltip="D"];
+  "A" -> "B";
+  "A" -> "C";
+  "B" -> "D";
+  "C" -> "D";
+  "D" -> "A";
+}
