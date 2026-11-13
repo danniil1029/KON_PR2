@@ -1,16 +1,20 @@
-"""Второй этап. Получение прямых зависимостей NuGet."""
+"""Третий этап. Построение графа зависимостей в ширину."""
 
 import argparse
-import re
 import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from src.nuget import DEFAULT_FRAMEWORK, PACKAGE_ID, NugetRepository
+from src.graph import TEST_ID, build_graph, excluded_name, read_test_graph
+from src.nuget import (
+    DEFAULT_FRAMEWORK,
+    PACKAGE_ID,
+    NugetRepository,
+    Package,
+)
 from src.versions import version_key
 
 DEFAULT_SOURCE = "https://api.nuget.org/v3/index.json"
-TEST_ID = re.compile(r"[A-Z]+")
 ROOT_DEPTH = 0
 
 
@@ -71,6 +75,8 @@ def validate_repository(parser, args):
     if args.test:
         if not args.repo or not Path(args.repo).is_file():
             parser.error("--repo: нужен существующий тестовый файл")
+        if args.version is not None:
+            parser.error("--version: используется только с NuGet")
         return
     if args.repo is None:
         args.repo = DEFAULT_SOURCE
@@ -109,24 +115,43 @@ def parse_args(argv=None):
     return args
 
 
-def main(argv=None):
-    """Получить и напечатать только прямые зависимости пакета."""
-    args = parse_args(argv)
+def analyze(args):
+    """Выбрать источник и обойти зависимости в ширину."""
     if args.test:
-        print("Локальный режим доступен с этапа 3.", file=sys.stderr)
-        return 2
+        source = read_test_graph(Path(args.repo))
+        root = Package(args.package)
+        if root not in source:
+            raise ValueError(f"В тестовом файле нет пакета {root}")
+        dependencies = source.__getitem__
+    else:
+        source = NugetRepository(args.repo, args.framework)
+        root = source.root(args.package, args.version)
+
+        def dependencies(package):
+            """Пропустить исключённые имена до поиска версий."""
+            return source.dependencies(
+                package, lambda name: not excluded_name(name, args.exclude)
+            )
+
+    return root, build_graph(root, dependencies, args.depth, args.exclude)
+
+
+def print_graph(graph):
+    """Показать список смежности в порядке обхода BFS."""
+    for package, dependencies in graph.items():
+        children = ", ".join(map(str, dependencies)) or "(нет)"
+        print(f"{package} -> {children}")
+
+
+def main(argv=None):
+    """Построить граф и вывести связи между пакетами."""
+    args = parse_args(argv)
     try:
-        repository = NugetRepository(args.repo, args.framework)
-        package = repository.root(args.package, args.version)
-        dependencies = repository.dependencies(package)
+        _, graph = analyze(args)
     except (ValueError, OSError) as error:
         print(f"Ошибка: {error}", file=sys.stderr)
         return 1
-    print(f"Прямые зависимости {package}:")
-    for dependency in dependencies:
-        print(f"  {dependency}")
-    if not dependencies:
-        print("  (нет)")
+    print_graph(graph)
     return 0
 
 

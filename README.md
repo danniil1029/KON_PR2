@@ -45,3 +45,24 @@ python -m unittest discover -s tests -v
 версия, а при её отсутствии последняя предварительная. `--framework` задаёт
 целевую платформу, по умолчанию `net8.0`. Для каждой связи выбирается
 минимальная версия в пределах диапазона манифеста.
+
+## Этап 3. Построение графа
+
+`build_graph` обходит прямые и транзитивные зависимости очередью BFS.
+Вершина попадает в очередь при первом обнаружении. Повторная встреча
+добавляет ребро, поэтому циклы и общие зависимости сохраняются.
+Корень имеет глубину 0. Фильтр проверяется по имени без учёта регистра.
+
+Локальный режим читает JSON через `read_test_graph`. Имена состоят из
+заглавных латинских букв. Результат на этом этапе — список смежности.
+
+```powershell
+python -m src.main --test --repo tests/fixtures/graph.json --package A
+python -m src.main --test --repo tests/fixtures/graph.json --package A --depth 1
+python -m src.main --test --repo tests/fixtures/graph.json --package A --exclude ext
+python -m src.main --test --repo tests/fixtures/graph.json --package F
+```
+
+Первый пример показывает цикл `A → B → D → A` и две связи с `D`.
+Глубина 1 оставляет узлы `A`, `B` и `C`. Фильтр убирает ветку
+`EXTRA → E`. Пакет `F` изолирован.
