@@ -1,12 +1,15 @@
-"""Первый этап. Проверка и вывод настроек командной строки."""
+"""Второй этап. Получение прямых зависимостей NuGet."""
 
 import argparse
 import re
+import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from src.nuget import DEFAULT_FRAMEWORK, PACKAGE_ID, NugetRepository
+from src.versions import version_key
+
 DEFAULT_SOURCE = "https://api.nuget.org/v3/index.json"
-PACKAGE_ID = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,99}")
 TEST_ID = re.compile(r"[A-Z]+")
 ROOT_DEPTH = 0
 
@@ -37,7 +40,7 @@ def valid_source(value):
 
 
 def argument_parser():
-    """Объявить семь параметров из задания."""
+    """Объявить параметры программы."""
     parser = argparse.ArgumentParser(
         description="Визуализация зависимостей NuGet. Вариант 10.",
         allow_abbrev=False,
@@ -53,6 +56,10 @@ def argument_parser():
         "--depth", type=nonnegative, help="Максимальная глубина"
     )
     parser.add_argument("--exclude", help="Подстрока для исключения пакетов")
+    parser.add_argument("--version", help="Версия корневого пакета")
+    parser.add_argument(
+        "--framework", default=DEFAULT_FRAMEWORK, help="Целевая платформа .NET"
+    )
     return parser
 
 
@@ -79,6 +86,17 @@ def validate_output(parser, output):
         parser.error("--output: папка для SVG должна существовать")
 
 
+def validate_nuget_options(parser, args):
+    """Проверить версию пакета и целевую платформу."""
+    if args.version is not None:
+        try:
+            version_key(args.version)
+        except ValueError as error:
+            parser.error(f"--version: {error}")
+    if not args.framework.strip():
+        parser.error("--framework: укажите целевую платформу")
+
+
 def parse_args(argv=None):
     """Прочитать опции и проверить значения."""
     parser = argument_parser()
@@ -87,14 +105,28 @@ def parse_args(argv=None):
     validate_output(parser, args.output)
     if args.exclude is not None and not args.exclude.strip():
         parser.error("--exclude: подстрока должна быть непустой")
+    validate_nuget_options(parser, args)
     return args
 
 
 def main(argv=None):
-    """Вывести семь параметров в формате ключ=значение."""
+    """Получить и напечатать только прямые зависимости пакета."""
     args = parse_args(argv)
-    for name, value in vars(args).items():
-        print(f"{name}={value}")
+    if args.test:
+        print("Локальный режим доступен с этапа 3.", file=sys.stderr)
+        return 2
+    try:
+        repository = NugetRepository(args.repo, args.framework)
+        package = repository.root(args.package, args.version)
+        dependencies = repository.dependencies(package)
+    except (ValueError, OSError) as error:
+        print(f"Ошибка: {error}", file=sys.stderr)
+        return 1
+    print(f"Прямые зависимости {package}:")
+    for dependency in dependencies:
+        print(f"  {dependency}")
+    if not dependencies:
+        print("  (нет)")
     return 0
 
 

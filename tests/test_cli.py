@@ -4,7 +4,7 @@ import contextlib
 import io
 import unittest
 
-from src.main import DEFAULT_SOURCE, main, parse_args
+from src.main import DEFAULT_SOURCE, parse_args
 
 USAGE_ERROR = 2
 
@@ -34,6 +34,8 @@ class CliTests(unittest.TestCase):
             (["--depth", "-1"], "--depth"),
             (["--depth", "one"], "--depth"),
             (["--exclude="], "--exclude"),
+            (["--version", "invalid"], "--version"),
+            (["--framework="], "--framework"),
         ]
         for options, expected in cases:
             with self.subTest(options=options):
@@ -43,19 +45,3 @@ class CliTests(unittest.TestCase):
                         parse_args(["--package", "A", *options])
                 self.assertEqual(error.exception.code, USAGE_ERROR)
                 self.assertIn(expected, stderr.getvalue())
-
-    def test_prototype_output(self):
-        """Проверить вывод семи строк ключ=значение."""
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
-            result = main(["--package", "A", "--tree", "--depth", "2"])
-        self.assertEqual(result, 0)
-        self.assertEqual(stdout.getvalue().splitlines(), [
-            "package=A",
-            f"repo={DEFAULT_SOURCE}",
-            "test=False",
-            "output=graph.svg",
-            "tree=True",
-            "depth=2",
-            "exclude=None",
-        ])
