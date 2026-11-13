@@ -1,0 +1,108 @@
+Вариант 10. Буквенные обозначения в графах NuGet
+Платформа net8.0. Версии корневых пакетов 8.0.0.
+
+Новая версия Python проверена по HTTP на локальном NuGet V3.
+Манифесты для проверки воспроизводят раздел net8.0 NuGet Gallery.
+Старые результаты .NET SDK приведены ниже. Для новой версии
+сопоставлены полные имена, версии и все рёбра с ранее сверенными
+графами тех же пакетов.
+
+Граф A. Узлов 2, рёбер 1.
+A
+`-- B
+A = microsoft.extensions.dependencyinjection@8.0.0
+B = microsoft.extensions.dependencyinjection.abstractions@8.0.0
+
+Граф B. Узлов 3, рёбер 2.
+A
+|-- B
+`-- C
+A = microsoft.extensions.options@8.0.0
+B = microsoft.extensions.dependencyinjection.abstractions@8.0.0
+C = microsoft.extensions.primitives@8.0.0
+
+Граф C. Узлов 6, рёбер 7.
+A
+|-- B
+|   `-- E
+|-- C
+|   `-- E [shown]
+`-- D
+    |-- E [shown]
+    `-- F
+A = microsoft.extensions.logging@8.0.0
+B = microsoft.extensions.dependencyinjection@8.0.0
+C = microsoft.extensions.logging.abstractions@8.0.0
+D = microsoft.extensions.options@8.0.0
+E = microsoft.extensions.dependencyinjection.abstractions@8.0.0
+F = microsoft.extensions.primitives@8.0.0
+
+Сохранённый вывод предыдущей сверки с .NET SDK
+
+Сверка с .NET SDK 8.0.408. Целевая платформа net8.0.
+Имена и версии пакетов сверены с dotnet list package --include-transitive.
+Рёбра сверены с разделом targets/net8.0 в project.assets.json после restore.
+Ниже приведены ASCII-деревья Python и вывод dotnet nuget why для общей зависимости.
+
+Microsoft.Extensions.DependencyInjection 8.0.0
+Пакеты: 2. Рёбра: 1. Списки имён и версий и рёбра совпали с .NET SDK.
+
+Python, ASCII-дерево
+microsoft.extensions.dependencyinjection@8.0.0
+`-- microsoft.extensions.dependencyinjection.abstractions@8.0.0
+
+dotnet nuget why Microsoft.Extensions.DependencyInjection.Abstractions
+Project 'Compare' has the following dependency graph(s) for 'Microsoft.Extensions.DependencyInjection.Abstractions':
+
+  [net8.0]
+   │  
+   └─ Microsoft.Extensions.DependencyInjection (v8.0.0)
+      └─ Microsoft.Extensions.DependencyInjection.Abstractions (v8.0.0)
+
+
+
+Microsoft.Extensions.Options 8.0.0
+Пакеты: 3. Рёбра: 2. Списки имён и версий и рёбра совпали с .NET SDK.
+
+Python, ASCII-дерево
+microsoft.extensions.options@8.0.0
+|-- microsoft.extensions.dependencyinjection.abstractions@8.0.0
+`-- microsoft.extensions.primitives@8.0.0
+
+dotnet nuget why Microsoft.Extensions.DependencyInjection.Abstractions
+Project 'Compare' has the following dependency graph(s) for 'Microsoft.Extensions.DependencyInjection.Abstractions':
+
+  [net8.0]
+   │  
+   └─ Microsoft.Extensions.Options (v8.0.0)
+      └─ Microsoft.Extensions.DependencyInjection.Abstractions (v8.0.0)
+
+
+
+Microsoft.Extensions.Logging 8.0.0
+Пакеты: 6. Рёбра: 7. Списки имён и версий и рёбра совпали с .NET SDK.
+
+Python, ASCII-дерево
+microsoft.extensions.logging@8.0.0
+|-- microsoft.extensions.dependencyinjection@8.0.0
+|   `-- microsoft.extensions.dependencyinjection.abstractions@8.0.0
+|-- microsoft.extensions.logging.abstractions@8.0.0
+|   `-- microsoft.extensions.dependencyinjection.abstractions@8.0.0 [shown]
+`-- microsoft.extensions.options@8.0.0
+    |-- microsoft.extensions.dependencyinjection.abstractions@8.0.0 [shown]
+    `-- microsoft.extensions.primitives@8.0.0
+
+dotnet nuget why Microsoft.Extensions.DependencyInjection.Abstractions
+Project 'Compare' has the following dependency graph(s) for 'Microsoft.Extensions.DependencyInjection.Abstractions':
+
+  [net8.0]
+   │  
+   └─ Microsoft.Extensions.Logging (v8.0.0)
+      ├─ Microsoft.Extensions.DependencyInjection (v8.0.0)
+      │  └─ Microsoft.Extensions.DependencyInjection.Abstractions (v8.0.0)
+      ├─ Microsoft.Extensions.Logging.Abstractions (v8.0.0)
+      │  └─ Microsoft.Extensions.DependencyInjection.Abstractions (v8.0.0)
+      └─ Microsoft.Extensions.Options (v8.0.0)
+         └─ Microsoft.Extensions.DependencyInjection.Abstractions (v8.0.0)
+
+
