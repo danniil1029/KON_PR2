@@ -66,3 +66,16 @@ python -m src.main --test --repo tests/fixtures/graph.json --package F
 Первый пример показывает цикл `A → B → D → A` и две связи с `D`.
 Глубина 1 оставляет узлы `A`, `B` и `C`. Фильтр убирает ветку
 `EXTRA → E`. Пакет `F` изолирован.
+
+## Этап 4. Обратные зависимости
+
+`reverse_edges` меняет направление связей во всём локальном графе.
+Тот же `build_graph` начинает BFS с выбранного пакета. Программа печатает
+пакеты, которые прямо или через другие пакеты зависят от него.
+
+```powershell
+python -m src.main --test --repo tests/fixtures/graph.json --package D --reverse
+python -m src.main --test --repo tests/fixtures/graph.json --package F --reverse
+```
+
+Для `D` получатся `B, C, A`, для `F` программа выведет `(нет)`.

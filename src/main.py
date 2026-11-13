@@ -1,11 +1,17 @@
-"""Третий этап. Построение графа зависимостей в ширину."""
+"""Четвёртый этап. Поиск обратных зависимостей."""
 
 import argparse
 import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from src.graph import TEST_ID, build_graph, excluded_name, read_test_graph
+from src.graph import (
+    TEST_ID,
+    build_graph,
+    excluded_name,
+    read_test_graph,
+    reverse_edges,
+)
 from src.nuget import (
     DEFAULT_FRAMEWORK,
     PACKAGE_ID,
@@ -64,6 +70,9 @@ def argument_parser():
     parser.add_argument(
         "--framework", default=DEFAULT_FRAMEWORK, help="Целевая платформа .NET"
     )
+    parser.add_argument(
+        "--reverse", action="store_true", help="Обратный обход для --test"
+    )
     return parser
 
 
@@ -78,6 +87,8 @@ def validate_repository(parser, args):
         if args.version is not None:
             parser.error("--version: используется только с NuGet")
         return
+    if args.reverse:
+        parser.error("--reverse: требуется тестовый репозиторий (--test)")
     if args.repo is None:
         args.repo = DEFAULT_SOURCE
     if not valid_source(args.repo):
@@ -122,6 +133,8 @@ def analyze(args):
         root = Package(args.package)
         if root not in source:
             raise ValueError(f"В тестовом файле нет пакета {root}")
+        if args.reverse:
+            source = reverse_edges(source)
         dependencies = source.__getitem__
     else:
         source = NugetRepository(args.repo, args.framework)
@@ -144,14 +157,18 @@ def print_graph(graph):
 
 
 def main(argv=None):
-    """Построить граф и вывести связи между пакетами."""
+    """Показать обычные связи или список обратных зависимостей."""
     args = parse_args(argv)
     try:
-        _, graph = analyze(args)
+        root, graph = analyze(args)
     except (ValueError, OSError) as error:
         print(f"Ошибка: {error}", file=sys.stderr)
         return 1
-    print_graph(graph)
+    if args.reverse:
+        print(f"Обратные зависимости {root}:")
+        print(", ".join(str(node) for node in graph if node != root) or "(нет)")
+    else:
+        print_graph(graph)
     return 0
 
 

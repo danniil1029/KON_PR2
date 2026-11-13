@@ -36,6 +36,7 @@ class CliTests(unittest.TestCase):
             (["--exclude="], "--exclude"),
             (["--version", "invalid"], "--version"),
             (["--framework="], "--framework"),
+            (["--reverse"], "--reverse"),
         ]
         for options, expected in cases:
             with self.subTest(options=options):
